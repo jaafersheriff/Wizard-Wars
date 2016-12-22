@@ -4,26 +4,27 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.util.Log;
-import android.widget.ImageView;
+import android.graphics.Typeface;
+
 
 import java.util.ArrayList;
 
-import games.jsheriff.wizardwars.Entity.Animation;
 import games.jsheriff.wizardwars.Entity.Player;
 import games.jsheriff.wizardwars.GameView;
 import games.jsheriff.wizardwars.R;
+import games.jsheriff.wizardwars.Sounds;
+import games.jsheriff.wizardwars.Sprites;
 
-/**
- * Created by jaafe on 12/16/2015.
- */
 public class MainMenuState extends GameState
 {
-    Bitmap[] BG;
-    Animation animation;
+    BitmapFactory.Options o;
+    int[] BGsource;
+    int currFrame;
+    long currFrameTime;
     GameView gv;
+    boolean playedOnce;
 
-    public ArrayList<String> options;
+    ArrayList<String> options;
 
     Rect titleBounds;
     Rect[] optionBounds;
@@ -32,116 +33,131 @@ public class MainMenuState extends GameState
     {
         this.gsm = gsm;
         this.gv = gsm.gv;
+
+        init();
     }
 
     @Override
     public void init()
     {
+        isinit = false;
         //Set up options
         options = new ArrayList<String>();
         options.add("Start");
-        options.add("About");
-        options.add("Quit");
+        options.add("Stats");
+        options.add("Settings");
 
         //Set up animation
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inScaled = false;
-        BG = new Bitmap[]{
-                BitmapFactory.decodeResource(gv.getResources(), R.drawable.menubg, options),
-                BitmapFactory.decodeResource(gv.getResources(), R.drawable.menubg1, options),
-                BitmapFactory.decodeResource(gv.getResources(), R.drawable.menubg2, options),
-                BitmapFactory.decodeResource(gv.getResources(), R.drawable.menubg3, options) };
-        animation = new Animation();
-        animation.setFrames(BG);
-        animation.setDelay(400);
+        playedOnce = false;
+        o = new BitmapFactory.Options();
+        o.inScaled = false;
+        BGsource = new int[]{
+                R.drawable.menubg1, R.drawable.menubg2, R.drawable.menubg3,R.drawable.menubg4,
+                R.drawable.menubg5, R.drawable.menubg6, R.drawable.menubg7, R.drawable.menubg8,
+                R.drawable.menubg9, R.drawable.menubg10, R.drawable.menubg11, R.drawable.menubg12,
+                R.drawable.menubg13, R.drawable.menubg14};
+        currFrame = 0;
+        currFrameTime = System.currentTimeMillis();
+
+        isinit = true;
     }
 
 
     public void draw() {
         //Draw BG
-        Log.d("New image", ""+animation.getFrame());
-        Rect bgBounds = new Rect(0, 0, animation.getImage().getWidth(), animation.getImage().getHeight());
+        Bitmap BG = BitmapFactory.decodeResource(gv.getResources(), BGsource[currFrame], o);
+        Rect bgBounds = new Rect(0, 0, BG.getWidth(), BG.getHeight());
         Rect gvBounds = new Rect(0, 0, gv.getWidth(), gv.getHeight());
-        gv.canvas.drawBitmap(animation.getImage(), bgBounds, gvBounds, gv.paint);
+        gv.canvas.drawBitmap(BG, bgBounds, gvBounds, gv.paint);
 
+        long nextFrameTime = System.currentTimeMillis();
+        if(nextFrameTime - currFrameTime >= 80)
+        {
+            if (currFrame == BGsource.length-1) playedOnce = true;
+            currFrame = ++currFrame % BGsource.length;
+            //if(currFrame == 0 && playedOnce) currFrame = 11;
+            currFrameTime = nextFrameTime;
+        }
 
         //Draw title
-        Bitmap title = BitmapFactory.decodeResource(gv.getResources(), R.drawable.title);
-        Rect titleSrc = new Rect(0, 0, title.getWidth(), title.getHeight());
-        titleBounds = new Rect(gv.getWidth() / 6, gv.getHeight() / 5, gv.getWidth() / 6 * 5, gv.getHeight() / 5 * 2);
-        gv.paint.setColor(Color.BLACK);
-        //gv.canvas.drawRect(titleBounds, gv.paint);
-        gv.paint.setTextSize(65);
-        gv.canvas.drawBitmap(title, titleSrc, titleBounds, gv.paint);
+        gv.paint.setTypeface(Typeface.createFromAsset(gv.getCx().getAssets(), "Minecraft.ttf"));
+        gv.paint.setColor(Color.WHITE);
+        gv.paint.setTextSize(150);
+        gv.canvas.drawText("Wizard", 400, 500, gv.paint);
+        gv.canvas.drawText("Wars", 500, 670, gv.paint);
 
         //Draw options
-        gv.paint.setTextSize(105);
-
-        int[] cols = {Color.WHITE, Color.CYAN, Color.MAGENTA};
-        int[] cols1 = {Color.CYAN, Color.MAGENTA, Color.WHITE};
+        //create option button bounds
         optionBounds = new Rect[options.size()];
-
         for (int i = 0; i < options.size(); i++) {
-            gv.paint.setColor(cols[i]);
-            //drawbounds
             optionBounds[i] = new Rect(
                     gv.getWidth() / 5,
-                    titleBounds.bottom + 100 + i*250,
+                    gv.getHeight()/2 + i*250 + 20,
                     gv.getWidth() / 5 * 4,
-                    titleBounds.bottom + 100 + i*250 + 150);
-            //gv.canvas.drawRect(optionBounds[i], gv.paint);
-            //draw text
-            gv.paint.setColor(cols1[i]);
-            gv.canvas.drawText(
-                    options.get(i),
-                    gv.getWidth() / 2 - 150,
-                    titleBounds.bottom + 100 + i * 250 + 150,
-                    gv.paint);
+                    gv.getHeight()/2 + i*250 + 250);
         }
-    }
-
-    @Override
-    public void update()
-    {
-
-    }
-
-    @Override
-    public void select(float Px, float Py)
-    {
-        //Title
-        if(Px > titleBounds.left && Px < titleBounds.right &&
-                Py > titleBounds.top && Py < titleBounds.bottom)
+        for(int i = 0; i < options.size(); i++)
         {
+            int source;
+            if(i == 0) source = Sprites.STARTBUTTON;
+            else if (i == 1) source = Sprites.STATSBUTTON;
+            else source = Sprites.SETTINGSBUTTON;
 
+            Bitmap button = gv.getSprites().getSheet(source);
+            Rect osrc = new Rect(0, 0, button.getWidth(), button.getHeight());
+            Rect odst = optionBounds[i];
+            gv.canvas.drawBitmap(button, osrc, odst, gv.paint);
         }
+    }
 
+    @Override
+    public void select(int Px, int Py)
+    {
         //Options
         for(int i = 0; i < options.size(); i++)
         {
-            if(Px > optionBounds[i].left && gv.Px < optionBounds[i].right &&
-                    Py > optionBounds[i].top && Py < optionBounds[i].bottom)
+            if(optionBounds[i] == null) continue;
+            if(optionBounds[i].contains(Px, Py))
             {
-                if(i == 0) //State
+                gv.getSounds().playSound(Sounds.SHUTTER, 0.8f, 0);
+
+                switch(i)
                 {
-                    gsm.setState(GameStateManager.LEVEL1STATE);
-                }
-                if(i == 1) //About
-                {
-                    gsm.setState(GameStateManager.ABOUTSTATE);
-                }
-                if(i == 2) //Quit
-                {
-                    System.exit(0);
+                    case 0: //START
+                        gsm.setState(GameStateManager.LEVEL1STATE);
+                        break;
+                    case 1: //STATS
+                        gsm.setState(GameStateManager.STATSSTATE);
+                        break;
+                    case 2: //SETTINGS
+                        gsm.setState(GameStateManager.SETTINGSSTATE);
+                        break;
+                    case 3: //QUIT
+                        System.exit(0);
+                        break;
+                    default:
+                        break;
                 }
             }
         }
     }
 
     @Override
-    public void setPlayer(Player p) {
+    public void hold(int Px, int Py) { }
 
+    public void back()
+    {
+        System.exit(0);
     }
 
+    @Override
+    public void setPlayer(Player p) {}
+
     public void deselect() { }
+
+    @Override
+    public void update() { }
+
+    public boolean isInit() { return isinit; }
+
 }
